@@ -1,10 +1,10 @@
--- InvoicePilot production database contract
--- Provider-neutral SQL; adapt types/index syntax to the selected PostgreSQL provider.
+-- InvoicePilot production database schema
 
 create table if not exists accounts (
   id uuid primary key,
   email text not null unique,
   name text not null,
+  password_hash text not null,
   created_at timestamptz not null default now()
 );
 
