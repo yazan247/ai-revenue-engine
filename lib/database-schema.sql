@@ -1,5 +1,4 @@
 -- InvoicePilot production database schema
-
 create table if not exists accounts (
   id uuid primary key,
   email text not null unique,
@@ -21,6 +20,15 @@ create table if not exists invoices (
   created_at timestamptz not null default now(),
   unique(account_id, invoice_number)
 );
-
 create index if not exists invoices_account_id_idx on invoices(account_id);
 create index if not exists invoices_due_date_idx on invoices(account_id, due_date);
+
+create table if not exists auth_sessions (
+  id uuid primary key,
+  account_id uuid not null references accounts(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists auth_sessions_account_idx on auth_sessions(account_id);
+create index if not exists auth_sessions_expiry_idx on auth_sessions(expires_at);
