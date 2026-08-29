@@ -1,0 +1,22 @@
+name: Migrate PostgreSQL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/database-schema.sql"
+      - ".github/workflows/migrate-database.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Apply schema
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          test -n "$DATABASE_URL"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f lib/database-schema.sql
