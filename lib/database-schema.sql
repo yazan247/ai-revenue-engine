@@ -32,3 +32,18 @@ create table if not exists auth_sessions (
 );
 create index if not exists auth_sessions_account_idx on auth_sessions(account_id);
 create index if not exists auth_sessions_expiry_idx on auth_sessions(expires_at);
+
+create table if not exists reminder_deliveries (
+  id uuid primary key,
+  invoice_id uuid not null references invoices(id) on delete cascade,
+  stage text not null check (stage in ('upcoming','due_today','3_days_overdue','7_days_overdue','14_days_overdue')),
+  scheduled_for date not null,
+  status text not null check (status in ('pending','sent','failed')),
+  provider_id text,
+  error text,
+  created_at timestamptz not null default now(),
+  sent_at timestamptz,
+  unique(invoice_id, stage, scheduled_for)
+);
+create index if not exists reminder_deliveries_invoice_idx on reminder_deliveries(invoice_id);
+create index if not exists reminder_deliveries_status_idx on reminder_deliveries(status, scheduled_for);
