@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createInvoice } from "../../../lib/invoice-service";
 import type { Invoice } from "../../../lib/domain";
 
-// Temporary development repository. Replace with an authenticated server-side
-// repository before enabling multi-user production access.
+// Temporary development store. Production must replace this with an authenticated repository.
 const invoices: Invoice[] = [];
 
 export async function GET() {
