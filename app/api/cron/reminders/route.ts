@@ -17,13 +17,10 @@ const stages: Array<{ stage: ReminderStage; offset: number }> = [
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  const value = request.headers.get("authorization");
-  return value === `Bearer ${secret}`;
+  return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-export async function POST(request: Request) {
-  if (!authorized(request)) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+async function runReminders() {
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
   const results: Array<{ invoiceId: string; stage: string; status: string }> = [];
@@ -31,8 +28,7 @@ export async function POST(request: Request) {
   for (const candidate of stages) {
     const { rows } = await db.query<Invoice & { accountId: string }>(
       `select id::text, account_id::text as "accountId", customer_name as "customerName", customer_email as "customerEmail", invoice_number as "invoiceNumber", amount::float8 as amount, currency, due_date::text as "dueDate", status, created_at::text as "createdAt"
-       from invoices
-       where status <> 'paid' and due_date = (current_date + $1::int)`,
+       from invoices where status <> 'paid' and due_date = (current_date + $1::int)`,
       [candidate.offset],
     );
 
@@ -58,6 +54,15 @@ export async function POST(request: Request) {
       }
     }
   }
+  return { ok: true, date: today, processed: results.length, results };
+}
 
-  return NextResponse.json({ ok: true, date: today, processed: results.length, results });
+export async function GET(request: Request) {
+  if (!authorized(request)) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  return NextResponse.json(await runReminders());
+}
+
+export async function POST(request: Request) {
+  if (!authorized(request)) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  return NextResponse.json(await runReminders());
 }
