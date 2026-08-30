@@ -1,0 +1,8 @@
+"use client";
+import { useEffect, useState } from "react";
+
+type Payment={id:string;accountId:string;plan:string;status:string;amountCents:number;currency:string;provider:string;providerReference:string|null;createdAt:string};
+export default function AdminBilling(){const [items,setItems]=useState<Payment[]>([]),[error,setError]=useState("");
+ async function load(){const r=await fetch('/api/admin/billing');const d=await r.json();if(!r.ok){setError(d.error||'Access denied');return}setItems(d.payments||[])} useEffect(()=>{void load()},[]);
+ async function review(id:string,action:'approve'|'reject'){const r=await fetch('/api/admin/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:id,action})});const d=await r.json();if(!r.ok){setError(d.error||'Review failed');return}setItems(x=>x.filter(p=>p.id!==id))}
+ return <main style={{maxWidth:1000,margin:'40px auto',padding:24,fontFamily:'system-ui'}}><h1>Billing Review</h1><p>Pending external payment requests. Approve only after verifying the payment in the provider dashboard.</p>{error&&<p role="alert">{error}</p>}{items.length===0?<p>No pending payments.</p>:<table style={{width:'100%',borderCollapse:'collapse'}}><thead><tr><th>Account</th><th>Plan</th><th>Amount</th><th>Provider ref</th><th>Created</th><th>Action</th></tr></thead><tbody>{items.map(p=><tr key={p.id}><td>{p.accountId}</td><td>{p.plan}</td><td>{(p.amountCents/100).toFixed(2)} {p.currency}</td><td>{p.providerReference||'—'}</td><td>{new Date(p.createdAt).toLocaleString()}</td><td><button onClick={()=>void review(p.id,'approve')}>Approve</button>{' '}<button onClick={()=>void review(p.id,'reject')}>Reject</button></td></tr>)}</tbody></table>}</main>}
